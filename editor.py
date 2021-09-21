@@ -16,6 +16,10 @@ class Editor(tk.Canvas):
         self.current_rect = -1
         self.blur = 0.0
         self.image = Image.open(filename)
+        if self.image.mode not in ["RGB", "RGBA"]:
+            new = self.image.convert("RGBA")
+            self.image.close()
+            self.image = new
         self.blurred = self.image.copy()
         self.image_gui = ImageTk.PhotoImage(self.blurred)
         kwargs["width"] = self.image_gui.width()
@@ -23,14 +27,32 @@ class Editor(tk.Canvas):
         super().__init__(master, **kwargs)
         self.image_id = self.create_image(0, 0, image=self.image_gui, anchor="nw")
         self.bind("<MouseWheel>", self.change_blur)
+        self.timer = 0
+        self.bind("<Up>", self.simulate_scroll)
+        self.bind("<Down>", self.simulate_scroll)
         self.bind("<Button-1>", self.new_rect)
         self.bind("<B1-Motion>", self.resize_rect)
         self.bind("<ButtonRelease-1>", self.create_rect)
         self.bind("<Return>", self.finish)
         self.focus_force()
 
+    def simulate_scroll(self, event):
+        if self.timer:
+            self.timer -= 1
+            return
+        class ScrollEvent:
+            def __init__(self, num):
+                self.num = num
+                self.delta = 0
+        if event.keysym == "Up": event = ScrollEvent(4)
+        elif event.keysym == "Down": event = ScrollEvent(5)
+        self.change_blur(event)
+        self.timer = 3 
+
     def change_blur(self, event):
-        self.blur += 0.5 * (event.delta / 120)
+        if event.num == 4 or event.delta == 120: sign = 1
+        elif event.num == 5 or event.delta == -120: sign = -1
+        self.blur += 0.5 * sign
         self.blur = max(0.0, self.blur)
         tmp = self.blurred
         self.blurred = self.image.filter(ImageFilter.GaussianBlur(self.blur))

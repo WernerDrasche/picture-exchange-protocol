@@ -58,7 +58,14 @@ class Connector(tk.Frame):
         try:
             self.sock.bind(("", PORT))
             self.sock.listen(1)
-            self.conn, addr = self.sock.accept()
+            self.sock.settimeout(0.5)
+            while True:
+                if self.in_mainloop:
+                    try: self.conn, addr = self.sock.accept() 
+                    except: continue
+                    break
+                else: return
+            self.sock.settimeout(0)
         except OSError as e: 
             print(e)
             self.stop()
