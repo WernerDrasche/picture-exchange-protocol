@@ -1,0 +1,11 @@
+
+*.pyc
+*.toc
+*.zip
+*.pkg
+*.manifest
+*.pyz
+build/protocol/warn-protocol.txt
+build/protocol/xref-protocol.html
+*.exe
+*.spec
