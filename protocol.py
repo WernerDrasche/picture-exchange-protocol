@@ -1,10 +1,13 @@
 from os import system
+import platform
 import tkinter as tk
+from tkinter import messagebox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from connector import Connector
 from editor import Editor
 from verifier import Verifier
 
+OS = platform.system()
 FILETYPES = [("Image Files", (".png", ".jpg", ".jpeg"))]
 
 def main():
@@ -19,8 +22,10 @@ def main():
     conn, role = connector.get_results()
     connector.destroy()
 
+    window.withdraw()
     while True:
         filename = askopenfilename(parent=window, filetypes=FILETYPES)
+        window.deiconify()
         if not filename:
             conn.close()
             return
@@ -45,12 +50,15 @@ def main():
             return
         image = verifier.get_results()
 
+        window.withdraw()
         filename = asksaveasfilename(parent=window, filetypes=[("Image Files", ".png")])
         if filename:
             if not ".png" in filename: filename += ".png"
             image.save(filename)
 
-        if not verifier.ask_resume():
+        answer = messagebox.askyesno("Question", "One more time?")
+        window.update()
+        if not answer or not verifier.ask_resume():
             print("INFO: One party wanted to stop")
             verifier.cleanup()
             break
@@ -58,7 +66,9 @@ def main():
         for img in images:
             img.close()
         verifier.destroy()
-        system("cls")
+        
+        if OS == "Windows": system("cls")
+        elif OS == "Linux": system("clear")
     
     window.destroy()
 

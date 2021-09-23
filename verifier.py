@@ -115,14 +115,11 @@ class Verifier(tk.Frame):
         return msg
 
     def ask_resume(self):
-        answer = messagebox.askyesno("Question", "One more time?")
-        if not answer: return False
-        msg = "ACCEPT" if answer else "DECLINE"
         print("STATUS: Waiting for partner to make up his mind...")
         print("INFO: The program might become unresponsive for a while")
-        try: other = self.exchange_text(msg) 
+        try: other = self.exchange_text("RESUME") 
         except: return False
-        return msg == "ACCEPT" and other == "ACCEPT"
+        return other == "RESUME"
 
     def panic(self):
         if not self.forcequit:
