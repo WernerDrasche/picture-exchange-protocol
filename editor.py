@@ -1,5 +1,7 @@
 import tkinter as tk
 from PIL import ImageTk, Image, ImageFilter, ImageDraw
+import threading
+import time
 
 USAGE = """USAGE: Mousewheel Up = Blur+
 USAGE: Mousewheel Down = Blur-
@@ -7,11 +9,33 @@ USAGE: Mousebutton Left = Create Rectangle (Drag)
 USAGE: Mousebutton Right = Delete Rectangle (Click)
 USAGE: Enter = Confirm and Exchange"""
 
+class KeyTracker:
+    def __init__(self, keys, duration):
+        self.keys = {key: False for key in keys}
+        self.duration = duration
+
+    def press(self, key, callback):
+        if self.keys[key]: return
+        self.keys[key] = True
+        threading.Thread(target=lambda: self.lock(key)).start()
+        callback()
+        
+    def lock(self, key):
+        time.sleep(self.duration)
+        self.keys[key] = False
+
+class ScrollEvent:
+    def __init__(self, event):
+        if event.keysym == "Up": self.num = 4
+        if event.keysym == "Down": self.num = 5
+        self.delta = 0
+
 class Editor(tk.Canvas):
     def __init__(self, master, filename, **kwargs):
         print(USAGE)
         self.successful = False
         self.master = master
+        self.key_tracker = KeyTracker(["Up", "Down"], 0.10)
         self.rects = {}
         self.current_rect = -1
         self.blur = 0.0
@@ -27,27 +51,15 @@ class Editor(tk.Canvas):
         super().__init__(master, **kwargs)
         self.image_id = self.create_image(0, 0, image=self.image_gui, anchor="nw")
         self.bind("<MouseWheel>", self.change_blur)
-        self.timer = 0
-        self.bind("<Up>", self.simulate_scroll)
-        self.bind("<Down>", self.simulate_scroll)
+        self.bind("<Up>", lambda event: self.key_tracker.press(
+            "Up", lambda: self.change_blur(ScrollEvent(event))))
+        self.bind("<Down>", lambda event: self.key_tracker.press(
+            "Down", lambda: self.change_blur(ScrollEvent(event))))
         self.bind("<Button-1>", self.new_rect)
         self.bind("<B1-Motion>", self.resize_rect)
         self.bind("<ButtonRelease-1>", self.create_rect)
         self.bind("<Return>", self.finish)
         self.focus_force()
-
-    def simulate_scroll(self, event):
-        if self.timer:
-            self.timer -= 1
-            return
-        class ScrollEvent:
-            def __init__(self, num):
-                self.num = num
-                self.delta = 0
-        if event.keysym == "Up": event = ScrollEvent(4)
-        elif event.keysym == "Down": event = ScrollEvent(5)
-        self.change_blur(event)
-        self.timer = 3 
 
     def change_blur(self, event):
         if event.num == 4 or event.delta == 120: sign = 1
