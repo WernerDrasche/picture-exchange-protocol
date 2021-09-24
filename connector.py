@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 import socket
 import threading
 
@@ -67,6 +68,7 @@ class Connector(tk.Frame):
                 else: return
             self.sock.settimeout(0)
         except OSError as e: 
+            messagebox.showerror("Error", "Could not create server")
             print(e)
             self.stop()
             return
@@ -83,8 +85,9 @@ class Connector(tk.Frame):
         print(f"STATUS: Connecting to {ip}")
         try: self.sock.connect((ip, PORT))
         except OSError as e:
-            self.stop()
+            messagebox.showerror("Error", "Connection failed")
             print(e)
+            self.stop()
             return
         print("STATUS: Connection successful")
         self.successful = True

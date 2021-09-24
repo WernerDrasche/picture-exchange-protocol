@@ -35,7 +35,7 @@ class Editor(tk.Canvas):
         print(USAGE)
         self.successful = False
         self.master = master
-        self.key_tracker = KeyTracker(["Up", "Down"], 0.10)
+        self.key_tracker = KeyTracker(["Up", "Down", "MouseWheel"], 0.10)
         self.rects = {}
         self.current_rect = -1
         self.blur = 0.0
@@ -50,7 +50,8 @@ class Editor(tk.Canvas):
         kwargs["height"] = self.image_gui.height()
         super().__init__(master, **kwargs)
         self.image_id = self.create_image(0, 0, image=self.image_gui, anchor="nw")
-        self.bind("<MouseWheel>", self.change_blur)
+        self.bind("<MouseWheel>", lambda event: self.key_tracker.press(
+            "MouseWheel", lambda: self.change_blur(event)))
         self.bind("<Up>", lambda event: self.key_tracker.press(
             "Up", lambda: self.change_blur(ScrollEvent(event))))
         self.bind("<Down>", lambda event: self.key_tracker.press(
@@ -62,8 +63,9 @@ class Editor(tk.Canvas):
         self.focus_force()
 
     def change_blur(self, event):
-        if event.num == 4 or event.delta == 120: sign = 1
-        elif event.num == 5 or event.delta == -120: sign = -1
+        sign = event.delta / 120
+        if event.num == 4: sign = 1
+        elif event.num == 5: sign = -1
         self.blur += 0.5 * sign
         self.blur = max(0.0, self.blur)
         tmp = self.blurred

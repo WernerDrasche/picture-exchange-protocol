@@ -59,6 +59,7 @@ def main():
         answer = messagebox.askyesno("Question", "One more time?")
         window.update()
         if not answer or not verifier.ask_resume():
+            if answer: messagebox.showinfo("Info", "Partner wanted to stop")
             print("INFO: One party wanted to stop")
             verifier.cleanup()
             break
