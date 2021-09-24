@@ -101,22 +101,3 @@ class Connector(tk.Frame):
 
     def get_results(self):
         return self.conn, self.role
-
-if __name__ == "__main__":
-    connector = Connector()
-    connector.mainloop()
-    if connector.successful:
-        connection = connector.conn
-        role = connector.role
-        connector.destroy()
-        #WTF window has to be destroyed before communication otherwise very laggy
-        if role == "server": 
-            connection.send(b"Hello from the server side!")
-            print(connection.recv(50).decode())
-        elif role == "client":
-            print(connection.recv(50).decode())
-            connection.send(b"Hello from the client side!")
-        input("close...")
-        connection.close()
-    elif connector.thread.is_alive(): connector.sock.close()
-    

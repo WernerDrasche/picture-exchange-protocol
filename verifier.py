@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox
 import io
 import threading
-from tkinter.constants import FALSE
 from PIL import Image, ImageTk
 
 MAX_INIT_SIZE = 10
@@ -63,6 +62,8 @@ class Verifier(tk.Frame):
         if msg_send == "ACCEPT" and msg_recv == "ACCEPT":
             self.stage += 1
         else:
+            if msg_recv == "DECLINE":
+                messagebox.showinfo("Info", "Your image was declined.")
             print("STATUS: Image was declined")
             print("STATUS: Operation aborted")
             self.master.quit()

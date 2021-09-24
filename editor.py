@@ -112,9 +112,3 @@ class Editor(tk.Canvas):
                 draw = ImageDraw.Draw(img)
                 draw.rectangle(rect, "BLACK", "BLACK")
         return imgs_with_rects[0], imgs_with_rects[1], self.image
-    
-if __name__ == "__main__":
-    window = tk.Tk()
-    editor = Editor(window, "test.png")
-    editor.pack()
-    window.mainloop()
