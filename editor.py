@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 from PIL import ImageTk, Image, ImageFilter, ImageDraw
 import threading
 import time
@@ -37,6 +38,7 @@ class Editor(tk.Canvas):
         self.master = master
         self.key_tracker = KeyTracker(["Up", "Down", "MouseWheel"], 0.10)
         self.rects = {}
+        self.rects2 = {}
         self.current_rect = -1
         self.blur = 0.0
         self.image = Image.open(filename)
@@ -78,7 +80,6 @@ class Editor(tk.Canvas):
         coords = [event.x, event.y, event.x, event.y]
         self.current_rect = self.create_rectangle(*coords)
         self.rects[self.current_rect] = coords
-        
 
     def resize_rect(self, event):
         self.rects[self.current_rect][2] = event.x
@@ -88,14 +89,34 @@ class Editor(tk.Canvas):
     def create_rect(self, _):
         def make_deleter(handle):
             return lambda _: self.delete_rect(handle)
+        def make_switcher(handle):
+            return lambda _: self.switch_rect(handle)
         self.itemconfigure(self.current_rect, fill="BLACK")
+        self.tag_bind(self.current_rect, "<Button-2>", make_switcher(self.current_rect))
         self.tag_bind(self.current_rect, "<Button-3>", make_deleter(self.current_rect))
 
     def delete_rect(self, rect):
         self.delete(rect)
-        del self.rects[rect]
+        if rect in self.rects: del self.rects[rect]
+        elif rect in self.rects2: del self.rects2[rect]
+
+    def switch_rect(self, rect):
+        if rect in self.rects:
+            self.rects2[rect] = self.rects.pop(rect)
+            self.itemconfigure(rect, fill="BLUE", outline="BLUE")
+        elif rect in self.rects2:
+            self.rects[rect] = self.rects2.pop(rect)
+            self.itemconfigure(rect, fill="BLACK", outline="BLACK")
 
     def finish(self, _):
+        if len(self.rects2) and not len(self.rects):
+            messagebox.showinfo("Info", 
+                    "Blue rects only work when combined with black ones")
+            return
+        if not len(self.rects) and not self.blur:
+            messagebox.showinfo("Info",
+                    "Cannot send image without protection")
+            return
         print("STATUS: Image locked and sent")
         self.successful = True
         self.master.quit()
@@ -108,9 +129,29 @@ class Editor(tk.Canvas):
         return self.successful
     
     def get_results(self):
-        imgs_with_rects = [self.blurred, self.image.copy()]
-        for img in imgs_with_rects:
-            for rect in self.rects.values():
-                draw = ImageDraw.Draw(img)
-                draw.rectangle(rect, "BLACK", "BLACK")
-        return imgs_with_rects[0], imgs_with_rects[1], self.image
+        imgs = []
+        if len(self.rects):
+            imgs_with_rects = [self.image.copy()]
+            if self.blur: imgs_with_rects.insert(0, self.blurred)
+            for img in imgs_with_rects:
+                for rect in self.rects.values():
+                    draw = ImageDraw.Draw(img)
+                    draw.rectangle(rect, "BLACK", "BLACK")
+                imgs.append(img)
+            if len(self.rects2):
+                img = self.image.copy()
+                for rect in self.rects2.values():
+                    draw = ImageDraw.Draw(img)
+                    draw.rectangle(rect, "BLUE", "BLUE")
+                imgs.append(img)
+        elif self.blur:
+            imgs.append(self.blurred)
+        imgs.append(self.image.copy())
+        return imgs
+
+
+if __name__ == "__main__":
+    window = tk.Tk()
+    editor = Editor(window, "test.png")
+    editor.pack()
+    window.mainloop()

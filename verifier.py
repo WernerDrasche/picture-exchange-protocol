@@ -20,6 +20,8 @@ class Verifier(tk.Frame):
         self.role = role
         self.images = images
         self.stage = 0
+        self.stages = len(images)
+        self.stages_other = 0
         self.successful = False
         self.paniced = False
         self.busy = False
@@ -35,12 +37,18 @@ class Verifier(tk.Frame):
     def init2(self):
         print("STATUS: Waiting for partner to finish editing...")
         print("INFO: The program might become unresponsive for a while")
-        try: self.image = self.exchange_image(self.images[self.stage])
+        try: 
+            self.stages_other = int(self.exchange_text(str(self.stages)))
+            self.image = self.exchange_image(self.images[self.stage])
         except: 
             self.panic()
             return
         self.image_gui = ImageTk.PhotoImage(self.image)
         self.active["image"] = self.image_gui
+
+        if self.stages < self.stages_other:
+            for _ in range(self.stages_other - self.stages):
+                self.images.insert(-2, self.images[-2])
 
         self.bind("<Return>", lambda _: self.start("ACCEPT"))
         self.bind("<Escape>", lambda _: self.start("DECLINE"))
@@ -63,7 +71,7 @@ class Verifier(tk.Frame):
             self.stage += 1
         else:
             if msg_recv == "DECLINE":
-                messagebox.showinfo("Info", "Your image was declined.")
+                messagebox.showinfo("Info", "Your image was declined")
             print("STATUS: Image was declined")
             print("STATUS: Operation aborted")
             self.master.quit()
@@ -78,7 +86,10 @@ class Verifier(tk.Frame):
                 return
             self.image_gui = ImageTk.PhotoImage(self.image)
             self.active["image"] = self.image_gui
-        self.busy = False
+            if self.stages_other - 1 <= self.stage < self.stages - 1:
+                self.verify("ACCEPT")
+            else:
+                self.busy = False
     
     def exchange_text(self, msg_send):
         msg_recv = self.exchange(msg_send.encode())
@@ -132,8 +143,8 @@ class Verifier(tk.Frame):
 
     def cleanup(self):
         self.forcequit = True
-        for img in self.images:
-            img.close()
+        for stage in range(self.stages):
+            self.images[stage].close()
         self.conn.close()
 
     def has_paniced(self):
