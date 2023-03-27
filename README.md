@@ -1,4 +1,4 @@
-# Nude Exchange Protocol
+# Picture Exchange Protocol
 This protocol is peer to peer so no server can save your private pictures.
 It uses a 3 stage verification process and only if both parties accept all of them the image will be saved to the respective computers.
 In the preliminary phase you have the option to apply blur and black boxes to censor out key aspects of the image.
